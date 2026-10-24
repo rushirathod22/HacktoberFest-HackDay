@@ -20,19 +20,13 @@ class ProjectService:
         slug: str,
         description: str | None = None,
     ):
+        base_slug = slug.strip().lower() or "project"
+        normalized_slug = base_slug
+        counter = 1
 
-        normalized_slug = slug.strip().lower()
-
-        existing = ProjectRepository.get_by_slug_and_org(
-            db,
-            normalized_slug,
-            organization_id,
-        )
-
-        if existing is not None:
-            raise ValueError(
-                "Project slug already exists in this organization."
-            )
+        while ProjectRepository.get_by_slug_and_org(db, normalized_slug, organization_id) is not None:
+            counter += 1
+            normalized_slug = f"{base_slug}-{counter}"
 
         return ProjectRepository.create(
             db=db,
@@ -41,6 +35,38 @@ class ProjectService:
             slug=normalized_slug,
             description=description,
         )
+
+    @staticmethod
+    def delete_project(
+        db: Session,
+        project_id: int,
+        organization_id: int,
+    ) -> bool:
+        project = ProjectRepository.get_by_id_and_org(db, project_id, organization_id)
+        if not project:
+            return False
+
+        from app.models.project_member import ProjectMember
+        from app.models.document import Document
+        from app.models.data_source import DataSource
+        from app.models.code_repository import CodeRepository
+        from app.models.code_chunk import CodeChunk
+        from app.models.code_symbol import CodeSymbol
+        from app.models.code_file import CodeFile
+        from app.models.code_commit import CodeCommit
+
+        db.query(ProjectMember).filter(ProjectMember.project_id == project_id).delete(synchronize_session=False)
+        db.query(CodeChunk).filter(CodeChunk.project_id == project_id).delete(synchronize_session=False)
+        db.query(CodeSymbol).filter(CodeSymbol.project_id == project_id).delete(synchronize_session=False)
+        db.query(CodeFile).filter(CodeFile.project_id == project_id).delete(synchronize_session=False)
+        db.query(CodeCommit).filter(CodeCommit.project_id == project_id).delete(synchronize_session=False)
+        db.query(CodeRepository).filter(CodeRepository.project_id == project_id).delete(synchronize_session=False)
+        db.query(Document).filter(Document.project_id == project_id).delete(synchronize_session=False)
+        db.query(DataSource).filter(DataSource.project_id == project_id).delete(synchronize_session=False)
+
+        db.delete(project)
+        db.commit()
+        return True
 
     @staticmethod
     def get_projects(

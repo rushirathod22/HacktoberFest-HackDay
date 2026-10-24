@@ -26,6 +26,7 @@ export const createDepartment = async (payload: { name: string; description?: st
 export const getProjectsAdmin = async () => (await api.get<AdminProject[]>("/projects")).data;
 export const createProjectAdmin = async (payload: { name: string; slug: string; description?: string }) => (await api.post<AdminProject>("/projects", payload)).data;
 export const archiveProjectAdmin = async (projectId: number) => (await api.patch<AdminProject>(`/projects/${projectId}/archive`)).data;
+export const deleteProjectAdmin = async (projectId: number) => api.delete(`/projects/${projectId}`);
 export const getProjectMembers = async (projectId: number) => (await api.get(`/projects/${projectId}/members`)).data;
 export const assignProjectMember = async (projectId: number, userId: number, permission = "PROJECT_MEMBER") => (await api.post(`/projects/${projectId}/members`, { user_id: userId, permission })).data;
 export const removeProjectMember = async (projectId: number, userId: number) => api.delete(`/projects/${projectId}/members/${userId}`);

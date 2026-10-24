@@ -205,3 +205,27 @@ def archive_project(
         )
 
     return project
+
+
+@router.delete(
+    "/{project_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+def delete_project(
+    project_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_admin),
+):
+    success = ProjectService.delete_project(
+        db=db,
+        project_id=project_id,
+        organization_id=current_user.organization_id,
+    )
+
+    if not success:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Project not found",
+        )
+
+    return None
