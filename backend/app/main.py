@@ -18,9 +18,13 @@ app = FastAPI(
 )
 
 
+from app.services.qdrant_service import QdrantService
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
         "http://localhost:5174",
         "http://127.0.0.1:5174",
     ],
@@ -29,9 +33,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Register your existing routers below this line
-# Example:
-# app.include_router(auth_router, prefix="/api/v1/auth")
+@app.on_event("startup")
+def startup_event():
+    try:
+        QdrantService.create_collection()
+    except Exception as exc:
+        logger.warning(f"Qdrant collection check skipped on startup: {exc}")
 
 
 app.add_exception_handler(Exception, global_exception_handler)
