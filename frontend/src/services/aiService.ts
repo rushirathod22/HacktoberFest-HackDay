@@ -10,6 +10,9 @@ export interface AIReference {
     chunk_index?: number;
     score: number;
     content?: string;
+    symbol_name?: string;
+    snippet?: string;
+    [key: string]: any;
 }
 
 export interface AIEntity {
