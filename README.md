@@ -1,6 +1,6 @@
-# Memora AI — Enterprise Organizational Memory + CodeMind
+# Enterprise Organizational Memory + CodeMind
 
-Memora is an organization-memory platform with a project-scoped CodeMind module.
+Project is about an organization-memory platform with a project-scoped CodeMind module.
 
 ## Product areas
 
