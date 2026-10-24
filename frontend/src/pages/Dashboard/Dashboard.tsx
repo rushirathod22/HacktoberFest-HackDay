@@ -1,933 +1,519 @@
+import { useEffect, useState } from "react";
+import type { ReactNode } from "react";
 import {
-    useEffect,
-    useState,
-} from "react";
-
-import type {
-    ReactNode,
-} from "react";
-
-
-import {
-    Building2,
-    Database,
-    FileText,
-    Layers3,
-    MessageSquare,
-    RefreshCw,
-    Loader2,
-    AlertCircle,
+  Building2,
+  Database,
+  FileText,
+  Layers3,
+  MessageSquare,
+  RefreshCw,
+  Loader2,
+  AlertCircle,
+  Activity,
+  CheckCircle2,
+  AlertTriangle,
+  Sparkles,
 } from "lucide-react";
-
-import {
-    getAdminDashboard,
-} from "../../services/api/adminDashboard";
-
-import type {
-    AdminDashboardData,
-} from "../../services/api/adminDashboard";
-
-import {
-    useAuth,
-} from "../../context/AuthContext";
-
+import { getAdminDashboard } from "../../services/api/adminDashboard";
+import type { AdminDashboardData } from "../../services/api/adminDashboard";
+import { useAuth } from "../../context/AuthContext";
 import EmployeeDashboard from "./EmployeeDashboard";
-
-import {
-    queueAllBackgroundSyncs,
-} from "../../services/api/sync";
+import { queueAllBackgroundSyncs } from "../../services/api/sync";
 
 function AdminDashboard() {
+  const [data, setData] = useState<AdminDashboardData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [syncing, setSyncing] = useState(false);
+  const [syncMessage, setSyncMessage] = useState("");
 
-    const [data, setData] =
-        useState<AdminDashboardData | null>(null);
+  const loadDashboard = async () => {
+    setLoading(true);
+    setError("");
 
-    const [loading, setLoading] =
-        useState(true);
+    try {
+      const dashboard = await getAdminDashboard();
+      setData(dashboard);
+    } catch (err: any) {
+      console.error("Failed to load admin dashboard:", err);
+      setError(
+        err?.response?.data?.detail || "Failed to load dashboard metrics."
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    const [error, setError] =
-        useState("");
+  const handleSyncAll = async () => {
+    setSyncing(true);
+    setSyncMessage("");
+    setError("");
 
-    const [syncing, setSyncing] =
-        useState(false);
+    try {
+      await queueAllBackgroundSyncs();
+      setSyncMessage("Synchronization queued. Ingesting sources in background...");
 
-    const [syncMessage, setSyncMessage] =
-        useState("");
+      for (let attempt = 0; attempt < 15; attempt++) {
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+        const dashboard = await getAdminDashboard();
+        setData(dashboard);
 
+        const hasActiveJobs =
+          dashboard.sync_jobs.pending > 0 || dashboard.sync_jobs.running > 0;
 
-    const loadDashboard = async () => {
-
-        setLoading(true);
-        setError("");
-
-        try {
-
-            const dashboard =
-                await getAdminDashboard();
-
-            setData(dashboard);
-
-        } catch (err: any) {
-
-            console.error(
-                "Failed to load admin dashboard:",
-                err
-            );
-
-            setError(
-                err?.response?.data?.detail ||
-                "Failed to load dashboard data."
-            );
-
-        } finally {
-
-            setLoading(false);
+        if (!hasActiveJobs) {
+          setSyncMessage("Synchronization cycle completed successfully.");
+          break;
         }
-    };
 
-    const handleSyncAll = async () => {
-        setSyncing(true);
-        setSyncMessage("");
-        setError("");
-
-        try {
-
-            await queueAllBackgroundSyncs();
-
-            setSyncMessage(
-                "Synchronization queued. Processing in background..."
-            );
-
-            for (let attempt = 0; attempt < 15; attempt++) {
-
-                await new Promise((resolve) =>
-                    setTimeout(resolve, 2000)
-                );
-
-                const dashboard =
-                    await getAdminDashboard();
-
-                setData(dashboard);
-
-                const hasActiveJobs =
-                    dashboard.sync_jobs.pending > 0 ||
-                    dashboard.sync_jobs.running > 0;
-
-                if (!hasActiveJobs) {
-
-                    setSyncMessage(
-                        "Synchronization completed."
-                    );
-
-                    break;
-                }
-
-                setSyncMessage(
-                    "Synchronization is still running..."
-                );
-            }
-
-        } catch (err: any) {
-
-            console.error(
-                "Failed to synchronize:",
-                err
-            );
-
-            setError(
-                err?.response?.data?.detail ||
-                "Failed to synchronize data sources."
-            );
-
-        } finally {
-
-            setSyncing(false);
-        }
-    };
-
-
-    useEffect(() => {
-        loadDashboard();
-    }, []);
-
-
-    if (loading) {
-
-        return (
-
-            <div className="flex min-h-125 items-center justify-center">
-
-                <div className="flex items-center gap-2 text-sm text-slate-500">
-
-                    <Loader2
-                        size={20}
-                        className="animate-spin"
-                    />
-
-                    Loading dashboard...
-
-                </div>
-
-            </div>
-        );
+        setSyncMessage("Background ingestion in progress...");
+      }
+    } catch (err: any) {
+      console.error("Failed to synchronize:", err);
+      setError(
+        err?.response?.data?.detail || "Failed to trigger background synchronization."
+      );
+    } finally {
+      setSyncing(false);
     }
+  };
 
+  useEffect(() => {
+    loadDashboard();
+  }, []);
 
-    if (error) {
-
-        return (
-
-            <div className="rounded-xl border border-red-200 bg-red-50 p-6">
-
-                <div className="flex items-start gap-3">
-
-                    <AlertCircle
-                        size={20}
-                        className="mt-0.5 text-red-600"
-                    />
-
-                    <div>
-
-                        <h2 className="font-semibold text-red-800">
-                            Unable to load dashboard
-                        </h2>
-
-                        <p className="mt-1 text-sm text-red-700">
-                            {error}
-                        </p>
-
-                        <button
-                            onClick={loadDashboard}
-                            className="mt-4 inline-flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700"
-                        >
-                            <RefreshCw size={16} />
-                            Retry
-                        </button>
-
-                    </div>
-
-                </div>
-
-            </div>
-        );
-    }
-
-
-    if (!data) {
-        return null;
-    }
-
-
+  if (loading) {
     return (
+      <div className="flex min-h-[400px] flex-col items-center justify-center gap-3">
+        <Loader2 size={28} className="animate-spin text-indigo-600" />
+        <p className="text-xs font-semibold text-slate-500">
+          Loading Enterprise Engine Telemetry...
+        </p>
+      </div>
+    );
+  }
 
-        <div className="space-y-6">
+  if (error) {
+    return (
+      <div className="rounded-2xl border border-red-200 bg-red-50/80 p-6 shadow-sm">
+        <div className="flex items-start gap-3">
+          <AlertCircle size={22} className="mt-0.5 text-red-600 shrink-0" />
+          <div className="flex-1">
+            <h2 className="text-sm font-bold text-red-900">
+              Telemetry Ingestion Failure
+            </h2>
+            <p className="mt-1 text-xs text-red-700">{error}</p>
+            <button
+              onClick={loadDashboard}
+              className="mt-4 inline-flex items-center gap-2 rounded-xl bg-red-600 px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-red-700"
+            >
+              <RefreshCw size={14} />
+              <span>Retry Telemetry</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
-            {/* =========================================
-                Header
-            ========================================== */}
+  if (!data) return null;
 
-            <div className="flex items-center justify-between">
+  return (
+    <div className="space-y-6">
+      {/* =========================================
+          Admin Dashboard Header
+      ========================================== */}
+      <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+        <div>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-bold tracking-tight text-slate-900">
+              Admin Governance Center
+            </h1>
+            <span className="rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] font-semibold text-indigo-700 border border-indigo-200">
+              Real-Time
+            </span>
+          </div>
+          <p className="mt-1 text-xs text-slate-500">
+            {data.organization.name || "TechNova Enterprise"} — Ingestion status & neural telemetry
+          </p>
+        </div>
 
-                <div>
-
-                    <h2 className="text-3xl font-bold text-slate-900">
-                        Admin Dashboard
-                    </h2>
-
-                    <p className="mt-1 text-sm text-slate-500">
-                        {data.organization.name ||
-                            "Organization overview"}
-                    </p>
-
-                </div>
-
-
-                <div className="flex items-center gap-3">
-
-                    {/* =========================================
-                        Sync All Sources
-                    ========================================== */}
-
-                    <button
-                        onClick={handleSyncAll}
-                        disabled={syncing}
-                        className="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
-                    >
-
-                        {syncing ? (
-
-                            <Loader2
-                                size={16}
-                                className="animate-spin"
-                            />
-
-                        ) : (
-
-                            <RefreshCw size={16} />
-
-                        )}
-
-                        {syncing
-                            ? "Queuing..."
-                            : "Sync All Sources"}
-
-                    </button>
-
-
-                    {/* =========================================
-                        Refresh Dashboard
-                    ========================================== */}
-
-                    <button
-                        onClick={loadDashboard}
-                        className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
-                    >
-
-                        <RefreshCw size={16} />
-
-                        Refresh
-
-                    </button>
-
-                </div>
-
-            </div>
-
-            {syncMessage && (
-                <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
-                    {syncMessage}
-                </div>
+        <div className="flex items-center gap-2.5">
+          <button
+            onClick={handleSyncAll}
+            disabled={syncing}
+            className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 px-4 py-2.5 text-xs font-semibold text-white shadow-md shadow-indigo-600/20 transition hover:brightness-110 active:scale-95 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {syncing ? (
+              <Loader2 size={14} className="animate-spin" />
+            ) : (
+              <RefreshCw size={14} />
             )}
-
-
-            {/* =========================================
-                Main Statistics
-            ========================================== */}
-
-            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-5">
-
-
-                <Card
-                    title="Organizations"
-                    value="1"
-                    icon={<Building2 size={22} />}
-                />
-
-
-                <Card
-                    title="Data Sources"
-                    value={String(
-                        data.sources.total
-                    )}
-                    icon={<Database size={22} />}
-                />
-
-
-                <Card
-                    title="Documents"
-                    value={String(
-                        data.documents.total
-                    )}
-                    icon={<FileText size={22} />}
-                />
-
-
-                <Card
-                    title="Chunks"
-                    value={String(
-                        data.chunks.total
-                    )}
-                    icon={<Layers3 size={22} />}
-                />
-
-
-                <Card
-                    title="Conversations"
-                    value={String(
-                        data.conversations.total
-                    )}
-                    icon={<MessageSquare size={22} />}
-                />
-
-            </div>
-
-
-            {/* =========================================
-                Users + Sources
-            ========================================== */}
-
-            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-
-
-                <SectionCard title="Users">
-
-                    <StatRow
-                        label="Total users"
-                        value={data.users.total}
-                    />
-
-                    <StatRow
-                        label="Active users"
-                        value={data.users.active}
-                    />
-
-                    <StatRow
-                        label="Admins"
-                        value={data.users.admins}
-                    />
-
-                    <StatRow
-                        label="Employees"
-                        value={data.users.employees}
-                    />
-
-                </SectionCard>
-
-
-                <SectionCard title="Data Sources">
-
-                    <StatRow
-                        label="Total sources"
-                        value={data.sources.total}
-                    />
-
-                    <StatRow
-                        label="Active"
-                        value={data.sources.active}
-                    />
-
-                    <StatRow
-                        label="Inactive"
-                        value={data.sources.inactive}
-                    />
-
-                    <StatRow
-                        label="Error"
-                        value={data.sources.error}
-                    />
-
-                </SectionCard>
-
-            </div>
-
-
-            {/* =========================================
-                Documents + Sync
-            ========================================== */}
-
-            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-
-
-                <SectionCard title="Document Processing">
-
-                    <StatRow
-                        label="Total documents"
-                        value={data.documents.total}
-                    />
-
-                    <StatRow
-                        label="Completed"
-                        value={data.documents.completed}
-                    />
-
-                    <StatRow
-                        label="Processing"
-                        value={data.documents.processing}
-                    />
-
-                    <StatRow
-                        label="Pending"
-                        value={data.documents.pending}
-                    />
-
-                    <StatRow
-                        label="Failed"
-                        value={data.documents.failed}
-                    />
-
-                </SectionCard>
-
-
-                <SectionCard title="Synchronization">
-
-                    <StatRow
-                        label="Total sync jobs"
-                        value={data.sync_jobs.total}
-                    />
-
-                    <StatRow
-                        label="Completed"
-                        value={data.sync_jobs.completed}
-                    />
-
-                    <StatRow
-                        label="Running"
-                        value={data.sync_jobs.running}
-                    />
-
-                    <StatRow
-                        label="Pending"
-                        value={data.sync_jobs.pending}
-                    />
-
-                    <StatRow
-                        label="Failed"
-                        value={data.sync_jobs.failed}
-                    />
-
-                </SectionCard>
-
-            </div>
-
-
-            {/* =========================================
-                Knowledge Graph
-            ========================================== */}
-
-            <SectionCard title="Knowledge Graph">
-
-                <StatRow
-                    label="Total nodes"
-                    value={
-                        data.knowledge_graph.total_nodes
-                    }
-                />
-
-                <StatRow
-                    label="Projects"
-                    value={
-                        data.knowledge_graph.projects
-                    }
-                />
-
-                <StatRow
-                    label="Technologies"
-                    value={
-                        data.knowledge_graph.technologies
-                    }
-                />
-
-                <StatRow
-                    label="Databases"
-                    value={
-                        data.knowledge_graph.databases
-                    }
-                />
-
-                <StatRow
-                    label="Documents"
-                    value={
-                        data.knowledge_graph.documents
-                    }
-                />
-
-                <StatRow
-                    label="Relationships"
-                    value={
-                        data.knowledge_graph.total_relationships
-                    }
-                />
-
-            </SectionCard>
-
-            {/* =========================================
-                AI Usage
-            ========================================== */}
-
-            <SectionCard title="AI Usage">
-
-                <StatRow
-                    label="Total conversations"
-                    value={
-                        data.conversations.total
-                    }
-                />
-
-                <StatRow
-                    label="User queries"
-                    value={
-                        data.ai_usage.queries
-                    }
-                />
-
-                <StatRow
-                    label="AI responses"
-                    value={
-                        data.ai_usage.responses
-                    }
-                />
-
-            </SectionCard>
-
-
-            {/* =========================================
-                Source Processing Summary
-            ========================================== */}
-
-            <SectionCard title="Processing Summary">
-
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-
-                    <SummaryBox
-                        label="Files Found"
-                        value={
-                            data.sync_jobs.files_found
-                        }
-                    />
-
-                    <SummaryBox
-                        label="Files Processed"
-                        value={
-                            data.sync_jobs.files_processed
-                        }
-                    />
-
-                    <SummaryBox
-                        label="Messages"
-                        value={
-                            data.conversations.messages
-                        }
-                    />
-
-                </div>
-
-            </SectionCard>
-
-            {/* =========================================
-                Recent Sync Activity
-            ========================================== */}
-
-            <div className="rounded-xl border bg-white p-5 shadow-sm">
-
-                <div className="mb-4">
-
-                    <h3 className="text-lg font-semibold text-slate-900">
-                        Recent Sync Activity
-                    </h3>
-
-                    <p className="mt-1 text-sm text-slate-500">
-                        Latest synchronization jobs
-                    </p>
-
-                </div>
-
-
-                {data.recent_activity.length === 0 ? (
-
-                    <p className="py-6 text-center text-sm text-slate-400">
-                        No synchronization activity yet.
-                    </p>
-
-                ) : (
-
-                    <div className="overflow-x-auto">
-
-                        <table className="w-full text-left text-sm">
-
-                            <thead>
-
-                                <tr className="border-b">
-
-                                    <th className="pb-3 font-medium text-slate-500">
-                                        Source
-                                    </th>
-
-                                    <th className="pb-3 font-medium text-slate-500">
-                                        Status
-                                    </th>
-
-                                    <th className="pb-3 font-medium text-slate-500">
-                                        Files
-                                    </th>
-
-                                    <th className="pb-3 font-medium text-slate-500">
-                                        Created
-                                    </th>
-
-                                </tr>
-
-                            </thead>
-
-
-                            <tbody>
-
-                                {data.recent_activity.map(
-                                    (activity) => (
-
-                                        <tr
-                                            key={activity.id}
-                                            className="border-b last:border-b-0"
-                                        >
-
-                                            <td className="py-3 font-medium text-slate-800">
-                                                {activity.source_name}
-                                            </td>
-
-
-                                            <td className="py-3">
-
-                                                <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700">
-                                                    {activity.status}
-                                                </span>
-
-                                            </td>
-
-
-                                            <td className="py-3 text-slate-600">
-
-                                                {activity.files_processed}
-                                                {" / "}
-                                                {activity.files_found}
-
-                                            </td>
-
-
-                                            <td className="py-3 text-slate-500">
-
-                                                {new Date(
-                                                    activity.created_at
-                                                ).toLocaleString()}
-
-                                            </td>
-
-                                        </tr>
-
-                                    )
-                                )}
-
-                            </tbody>
-
-                        </table>
-
-                    </div>
-
-                )}
-
-            </div>
-            
-            {/* =========================================
-                System Health
-            ========================================== */}
-
-            <SectionCard title="System Health">
-
-                <HealthStatus
-                    label="PostgreSQL"
-                    status={data.system_health.database}
-                />
-
-                <HealthStatus
-                    label="Ingestion"
-                    status={data.system_health.ingestion}
-                />
-
-            </SectionCard>
-
-            {/* =========================================
-                Last Sync
-            ========================================== */}
-
-            <div className="rounded-xl border bg-white p-5 shadow-sm">
-
-                <p className="text-sm font-medium text-slate-700">
-                    Last synchronization
-                </p>
-
-                <p className="mt-2 text-sm text-slate-500">
-
-                    {data.sources.last_synced_at
-                        ? new Date(
-                            data.sources.last_synced_at
-                        ).toLocaleString()
-                        : "No synchronization recorded yet"}
-
-                </p>
-
-            </div>
-
+            <span>{syncing ? "Ingesting..." : "Sync All Sources"}</span>
+          </button>
+
+          <button
+            onClick={loadDashboard}
+            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-xs font-semibold text-slate-700 shadow-2xs transition hover:bg-slate-50 hover:text-slate-900"
+          >
+            <RefreshCw size={14} />
+            <span>Refresh</span>
+          </button>
         </div>
-    );
-}
+      </div>
 
-
-/* ================================================
-   Main Card
-================================================ */
-
-function Card(
-    {
-        title,
-        value,
-        icon,
-    }: {
-        title: string;
-        value: string;
-        icon: ReactNode;
-    }
-) {
-
-    return (
-
-        <div className="rounded-xl border bg-white p-5 shadow-sm">
-
-            <div className="flex items-center justify-between">
-
-                <div>
-
-                    <p className="text-sm text-slate-500">
-                        {title}
-                    </p>
-
-                    <h2 className="mt-2 text-3xl font-bold text-slate-900">
-                        {value}
-                    </h2>
-
-                </div>
-
-
-                <div className="rounded-lg bg-slate-100 p-3 text-slate-700">
-
-                    {icon}
-
-                </div>
-
-            </div>
-
+      {/* Sync Status Banner */}
+      {syncMessage && (
+        <div className="flex items-center gap-2 rounded-xl border border-indigo-200 bg-indigo-50/80 px-4 py-3 text-xs font-medium text-indigo-800">
+          <Activity size={16} className="text-indigo-600 animate-pulse" />
+          <span>{syncMessage}</span>
         </div>
-    );
-}
+      )}
 
+      {/* =========================================
+          Top 5 KPI Metric Cards
+      ========================================== */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
+        <KpiCard
+          title="Organizations"
+          value="1"
+          sub="Primary Tenant"
+          color="indigo"
+          icon={<Building2 size={20} />}
+        />
+        <KpiCard
+          title="Data Sources"
+          value={String(data.sources.total)}
+          sub={`${data.sources.active} active syncs`}
+          color="blue"
+          icon={<Database size={20} />}
+        />
+        <KpiCard
+          title="Indexed Docs"
+          value={String(data.documents.total)}
+          sub={`${data.documents.completed} fully parsed`}
+          color="violet"
+          icon={<FileText size={20} />}
+        />
+        <KpiCard
+          title="Vector Chunks"
+          value={String(data.chunks.total)}
+          sub="Qdrant embeddings"
+          color="cyan"
+          icon={<Layers3 size={20} />}
+        />
+        <KpiCard
+          title="AI Conversations"
+          value={String(data.conversations.total)}
+          sub={`${data.conversations.messages} messages`}
+          color="amber"
+          icon={<MessageSquare size={20} />}
+        />
+      </div>
 
-/* ================================================
-   Section Card
-================================================ */
+      {/* =========================================
+          Row 1: Users & Data Sources
+      ========================================== */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <SectionCard title="User Demographics & Access" icon={<Building2 size={16} className="text-indigo-600" />}>
+          <StatRow label="Total Registered Users" value={data.users.total} />
+          <StatRow label="Active Accounts" value={data.users.active} />
+          <StatRow label="System Administrators" value={data.users.admins} badge="Admin Role" />
+          <StatRow label="Employees & Members" value={data.users.employees} badge="Member Role" />
+        </SectionCard>
 
-function SectionCard(
-    {
-        title,
-        children,
-    }: {
-        title: string;
-        children: ReactNode;
-    }
-) {
+        <SectionCard title="Connectors & Ingestion Sources" icon={<Database size={16} className="text-blue-600" />}>
+          <StatRow label="Total Configured Sources" value={data.sources.total} />
+          <StatRow label="Active & Online" value={data.sources.active} highlight="emerald" />
+          <StatRow label="Idle / Inactive" value={data.sources.inactive} />
+          <StatRow label="Sync Errors" value={data.sources.error} highlight={data.sources.error > 0 ? "red" : undefined} />
+        </SectionCard>
+      </div>
 
-    return (
+      {/* =========================================
+          Row 2: Document Processing & Sync Jobs
+      ========================================== */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <SectionCard title="Document Parsing Pipeline" icon={<FileText size={16} className="text-violet-600" />}>
+          <StatRow label="Total Ingested Files" value={data.documents.total} />
+          <StatRow label="Completed Embeddings" value={data.documents.completed} highlight="emerald" />
+          <StatRow label="Parsing in Flight" value={data.documents.processing} highlight={data.documents.processing > 0 ? "indigo" : undefined} />
+          <StatRow label="Pending Queue" value={data.documents.pending} />
+          <StatRow label="Failed Extractions" value={data.documents.failed} highlight={data.documents.failed > 0 ? "red" : undefined} />
+        </SectionCard>
 
-        <div className="rounded-xl border bg-white p-5 shadow-sm">
+        <SectionCard title="Celery Background Workers" icon={<RefreshCw size={16} className="text-cyan-600" />}>
+          <StatRow label="Total Job Executions" value={data.sync_jobs.total} />
+          <StatRow label="Successfully Processed" value={data.sync_jobs.completed} highlight="emerald" />
+          <StatRow label="Active Running Workers" value={data.sync_jobs.running} highlight={data.sync_jobs.running > 0 ? "indigo" : undefined} />
+          <StatRow label="Redis Broker Queue" value={data.sync_jobs.pending} />
+          <StatRow label="Job Failures" value={data.sync_jobs.failed} highlight={data.sync_jobs.failed > 0 ? "red" : undefined} />
+        </SectionCard>
+      </div>
 
-            <h3 className="mb-4 text-lg font-semibold text-slate-900">
-                {title}
+      {/* =========================================
+          Row 3: Knowledge Graph & AI Metrics
+      ========================================== */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <SectionCard title="Neo4j Knowledge Graph Telemetry" icon={<Sparkles size={16} className="text-violet-600" />}>
+          <StatRow label="Total Graph Nodes" value={data.knowledge_graph.total_nodes} />
+          <StatRow label="Indexed Projects" value={data.knowledge_graph.projects} />
+          <StatRow label="Technologies & Frameworks" value={data.knowledge_graph.technologies} />
+          <StatRow label="Database Entities" value={data.knowledge_graph.databases} />
+          <StatRow label="Linked Documents" value={data.knowledge_graph.documents} />
+          <StatRow label="Total Semantic Relationships" value={data.knowledge_graph.total_relationships} highlight="indigo" />
+        </SectionCard>
+
+        <SectionCard title="AI Intelligence & Token Usage" icon={<MessageSquare size={16} className="text-amber-600" />}>
+          <StatRow label="Total Prompt Queries" value={data.ai_usage.queries} />
+          <StatRow label="Neural Responses Generated" value={data.ai_usage.responses} />
+          <StatRow label="Files Discovered in Scope" value={data.sync_jobs.files_found} />
+          <StatRow label="Files Processed via Vectorizer" value={data.sync_jobs.files_processed} highlight="emerald" />
+        </SectionCard>
+      </div>
+
+      {/* =========================================
+          Recent Sync Activity Table
+      ========================================== */}
+      <div className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-xs">
+        <div className="mb-4 flex items-center justify-between">
+          <div>
+            <h3 className="text-sm font-bold text-slate-900">
+              Recent Ingestion Telemetry
             </h3>
-
-            <div className="space-y-3">
-                {children}
-            </div>
-
+            <p className="mt-0.5 text-xs text-slate-500">
+              Audit log of latest synchronization jobs and parser results
+            </p>
+          </div>
+          <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-600">
+            {data.recent_activity.length} Entries
+          </span>
         </div>
-    );
-}
 
+        {data.recent_activity.length === 0 ? (
+          <div className="py-10 text-center">
+            <Database size={24} className="mx-auto text-slate-300" />
+            <p className="mt-2 text-xs text-slate-400">
+              No synchronization jobs recorded yet.
+            </p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead>
+                <tr className="border-b border-slate-100 text-slate-500">
+                  <th className="pb-3 font-semibold">Data Source</th>
+                  <th className="pb-3 font-semibold">Status</th>
+                  <th className="pb-3 font-semibold">Parsed Files</th>
+                  <th className="pb-3 font-semibold">Timestamp</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {data.recent_activity.map((activity) => (
+                  <tr key={activity.id} className="transition hover:bg-slate-50/80">
+                    <td className="py-3 font-semibold text-slate-900">
+                      {activity.source_name}
+                    </td>
+                    <td className="py-3">
+                      <span
+                        className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                          activity.status.toLowerCase() === "completed"
+                            ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                            : activity.status.toLowerCase() === "running"
+                            ? "bg-indigo-50 text-indigo-700 border border-indigo-200 animate-pulse"
+                            : "bg-slate-100 text-slate-700 border border-slate-200"
+                        }`}
+                      >
+                        {activity.status}
+                      </span>
+                    </td>
+                    <td className="py-3 font-mono text-slate-600">
+                      {activity.files_processed} / {activity.files_found}
+                    </td>
+                    <td className="py-3 text-slate-500">
+                      {new Date(activity.created_at).toLocaleString()}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* =========================================
+          System Health Telemetry
+      ========================================== */}
+      <div className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-xs">
+        <h3 className="text-sm font-bold text-slate-900 mb-4">
+          Core Infrastructure Health
+        </h3>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <HealthBadge
+            label="PostgreSQL Relational DB"
+            status={data.system_health.database}
+          />
+          <HealthBadge
+            label="Celery Asynchronous Ingestion"
+            status={data.system_health.ingestion}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
 
 /* ================================================
-   Stat Row
+   Modern KPI Card
 ================================================ */
+function KpiCard({
+  title,
+  value,
+  sub,
+  color,
+  icon,
+}: {
+  title: string;
+  value: string;
+  sub: string;
+  color: "indigo" | "blue" | "violet" | "cyan" | "amber";
+  icon: ReactNode;
+}) {
+  const colorMap = {
+    indigo: "border-indigo-500/20 text-indigo-600 bg-indigo-50/50",
+    blue: "border-blue-500/20 text-blue-600 bg-blue-50/50",
+    violet: "border-violet-500/20 text-violet-600 bg-violet-50/50",
+    cyan: "border-cyan-500/20 text-cyan-600 bg-cyan-50/50",
+    amber: "border-amber-500/20 text-amber-600 bg-amber-50/50",
+  };
 
-function StatRow(
-    {
-        label,
-        value,
-    }: {
-        label: string;
-        value: number;
-    }
-) {
-
-    return (
-
-        <div className="flex items-center justify-between border-b pb-2 last:border-b-0">
-
-            <span className="text-sm text-slate-500">
-                {label}
-            </span>
-
-            <span className="font-semibold text-slate-800">
-                {value}
-            </span>
-
+  return (
+    <div className="group relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs transition hover:-translate-y-0.5 hover:shadow-md">
+      <div className="flex items-center justify-between">
+        <span className="text-xs font-medium text-slate-500">{title}</span>
+        <div
+          className={`flex h-8 w-8 items-center justify-center rounded-lg border ${colorMap[color]}`}
+        >
+          {icon}
         </div>
-    );
+      </div>
+      <p className="mt-2 text-2xl font-bold tracking-tight text-slate-900">
+        {value}
+      </p>
+      <p className="mt-0.5 text-[11px] text-slate-400">{sub}</p>
+    </div>
+  );
 }
-
-function HealthStatus(
-    {
-        label,
-        status,
-    }: {
-        label: string;
-        status: string;
-    }
-) {
-
-    return (
-
-        <div className="flex items-center justify-between border-b pb-2 last:border-b-0">
-
-            <span className="text-sm text-slate-500">
-                {label}
-            </span>
-
-            <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700">
-                {status}
-            </span>
-
-        </div>
-    );
-}
-
 
 /* ================================================
-   Summary Box
+   Section Container Card
 ================================================ */
-
-function SummaryBox(
-    {
-        label,
-        value,
-    }: {
-        label: string;
-        value: number;
-    }
-) {
-
-    return (
-
-        <div className="rounded-lg bg-slate-50 p-4">
-
-            <p className="text-sm text-slate-500">
-                {label}
-            </p>
-
-            <p className="mt-2 text-2xl font-bold text-slate-900">
-                {value}
-            </p>
-
-        </div>
-    );
+function SectionCard({
+  title,
+  icon,
+  children,
+}: {
+  title: string;
+  icon?: ReactNode;
+  children: ReactNode;
+}) {
+  return (
+    <div className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-xs">
+      <div className="mb-4 flex items-center gap-2 border-b border-slate-100 pb-3">
+        {icon}
+        <h3 className="text-sm font-bold text-slate-900">{title}</h3>
+      </div>
+      <div className="space-y-3">{children}</div>
+    </div>
+  );
 }
 
+/* ================================================
+   Stat Row Component
+================================================ */
+function StatRow({
+  label,
+  value,
+  badge,
+  highlight,
+}: {
+  label: string;
+  value: number;
+  badge?: string;
+  highlight?: "emerald" | "indigo" | "red";
+}) {
+  const highlightClass =
+    highlight === "emerald"
+      ? "text-emerald-600 font-bold"
+      : highlight === "indigo"
+      ? "text-indigo-600 font-bold"
+      : highlight === "red"
+      ? "text-red-600 font-bold"
+      : "text-slate-900 font-semibold";
+
+  return (
+    <div className="flex items-center justify-between py-1.5 text-xs">
+      <span className="text-slate-600">{label}</span>
+      <div className="flex items-center gap-2">
+        {badge && (
+          <span className="rounded-md bg-slate-100 px-1.5 py-0.5 text-[10px] text-slate-500">
+            {badge}
+          </span>
+        )}
+        <span className={highlightClass}>{value}</span>
+      </div>
+    </div>
+  );
+}
+
+/* ================================================
+   Health Status Badge
+================================================ */
+function HealthBadge({
+  label,
+  status,
+}: {
+  label: string;
+  status: string;
+}) {
+  const isHealthy =
+    status.toLowerCase() === "healthy" || status.toLowerCase() === "connected" || status.toLowerCase() === "ok";
+
+  return (
+    <div className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50/70 p-4">
+      <span className="text-xs font-medium text-slate-700">{label}</span>
+      <div className="flex items-center gap-1.5">
+        {isHealthy ? (
+          <>
+            <CheckCircle2 size={15} className="text-emerald-500" />
+            <span className="text-xs font-semibold text-emerald-700 capitalize">
+              {status}
+            </span>
+          </>
+        ) : (
+          <>
+            <AlertTriangle size={15} className="text-amber-500" />
+            <span className="text-xs font-semibold text-amber-700 capitalize">
+              {status}
+            </span>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ================================================
+   Root Dashboard Switcher
+================================================ */
 function Dashboard() {
+  const { user } = useAuth();
 
-    const { user } = useAuth();
+  if (user?.role === "employee") {
+    return <EmployeeDashboard />;
+  }
 
-    if (user?.role === "employee") {
-
-        return <EmployeeDashboard />;
-
-    }
-
-    return <AdminDashboard />;
+  return <AdminDashboard />;
 }
-
 
 export default Dashboard;
