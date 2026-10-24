@@ -134,7 +134,7 @@ function AdminDashboard() {
             </span>
           </div>
           <p className="mt-1 text-xs text-slate-500">
-            {data.organization.name || "TechNova Enterprise"} — Ingestion status & neural telemetry
+            {data?.organization?.name || "TechNova Enterprise"} — Ingestion status & neural telemetry
           </p>
         </div>
 
@@ -183,29 +183,29 @@ function AdminDashboard() {
         />
         <KpiCard
           title="Data Sources"
-          value={String(data.sources.total)}
-          sub={`${data.sources.active} active syncs`}
+          value={String(data?.sources?.total ?? 0)}
+          sub={`${data?.sources?.active ?? 0} active syncs`}
           color="blue"
           icon={<Database size={20} />}
         />
         <KpiCard
           title="Indexed Docs"
-          value={String(data.documents.total)}
-          sub={`${data.documents.completed} fully parsed`}
+          value={String(data?.documents?.total ?? 0)}
+          sub={`${data?.documents?.completed ?? 0} fully parsed`}
           color="violet"
           icon={<FileText size={20} />}
         />
         <KpiCard
           title="Vector Chunks"
-          value={String(data.chunks.total)}
+          value={String(data?.chunks?.total ?? 0)}
           sub="Qdrant embeddings"
           color="cyan"
           icon={<Layers3 size={20} />}
         />
         <KpiCard
           title="AI Conversations"
-          value={String(data.conversations.total)}
-          sub={`${data.conversations.messages} messages`}
+          value={String(data?.conversations?.total ?? 0)}
+          sub={`${data?.conversations?.messages ?? 0} messages`}
           color="amber"
           icon={<MessageSquare size={20} />}
         />
@@ -216,17 +216,17 @@ function AdminDashboard() {
       ========================================== */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <SectionCard title="User Demographics & Access" icon={<Building2 size={16} className="text-indigo-600" />}>
-          <StatRow label="Total Registered Users" value={data.users.total} />
-          <StatRow label="Active Accounts" value={data.users.active} />
-          <StatRow label="System Administrators" value={data.users.admins} badge="Admin Role" />
-          <StatRow label="Employees & Members" value={data.users.employees} badge="Member Role" />
+          <StatRow label="Total Registered Users" value={data?.users?.total ?? 0} />
+          <StatRow label="Active Accounts" value={data?.users?.active ?? 0} />
+          <StatRow label="System Administrators" value={data?.users?.admins ?? 0} badge="Admin Role" />
+          <StatRow label="Employees & Members" value={data?.users?.employees ?? 0} badge="Member Role" />
         </SectionCard>
 
         <SectionCard title="Connectors & Ingestion Sources" icon={<Database size={16} className="text-blue-600" />}>
-          <StatRow label="Total Configured Sources" value={data.sources.total} />
-          <StatRow label="Active & Online" value={data.sources.active} highlight="emerald" />
-          <StatRow label="Idle / Inactive" value={data.sources.inactive} />
-          <StatRow label="Sync Errors" value={data.sources.error} highlight={data.sources.error > 0 ? "red" : undefined} />
+          <StatRow label="Total Configured Sources" value={data?.sources?.total ?? 0} />
+          <StatRow label="Active & Online" value={data?.sources?.active ?? 0} highlight="emerald" />
+          <StatRow label="Idle / Inactive" value={data?.sources?.inactive ?? 0} />
+          <StatRow label="Sync Errors" value={data?.sources?.error ?? 0} highlight={(data?.sources?.error ?? 0) > 0 ? "red" : undefined} />
         </SectionCard>
       </div>
 
@@ -235,19 +235,19 @@ function AdminDashboard() {
       ========================================== */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <SectionCard title="Document Parsing Pipeline" icon={<FileText size={16} className="text-violet-600" />}>
-          <StatRow label="Total Ingested Files" value={data.documents.total} />
-          <StatRow label="Completed Embeddings" value={data.documents.completed} highlight="emerald" />
-          <StatRow label="Parsing in Flight" value={data.documents.processing} highlight={data.documents.processing > 0 ? "indigo" : undefined} />
-          <StatRow label="Pending Queue" value={data.documents.pending} />
-          <StatRow label="Failed Extractions" value={data.documents.failed} highlight={data.documents.failed > 0 ? "red" : undefined} />
+          <StatRow label="Total Ingested Files" value={data?.documents?.total ?? 0} />
+          <StatRow label="Completed Embeddings" value={data?.documents?.completed ?? 0} highlight="emerald" />
+          <StatRow label="Parsing in Flight" value={data?.documents?.processing ?? 0} highlight={(data?.documents?.processing ?? 0) > 0 ? "indigo" : undefined} />
+          <StatRow label="Pending Queue" value={data?.documents?.pending ?? 0} />
+          <StatRow label="Failed Extractions" value={data?.documents?.failed ?? 0} highlight={(data?.documents?.failed ?? 0) > 0 ? "red" : undefined} />
         </SectionCard>
 
         <SectionCard title="Celery Background Workers" icon={<RefreshCw size={16} className="text-cyan-600" />}>
-          <StatRow label="Total Job Executions" value={data.sync_jobs.total} />
-          <StatRow label="Successfully Processed" value={data.sync_jobs.completed} highlight="emerald" />
-          <StatRow label="Active Running Workers" value={data.sync_jobs.running} highlight={data.sync_jobs.running > 0 ? "indigo" : undefined} />
-          <StatRow label="Redis Broker Queue" value={data.sync_jobs.pending} />
-          <StatRow label="Job Failures" value={data.sync_jobs.failed} highlight={data.sync_jobs.failed > 0 ? "red" : undefined} />
+          <StatRow label="Total Job Executions" value={data?.sync_jobs?.total ?? 0} />
+          <StatRow label="Successfully Processed" value={data?.sync_jobs?.completed ?? 0} highlight="emerald" />
+          <StatRow label="Active Running Workers" value={data?.sync_jobs?.running ?? 0} highlight={(data?.sync_jobs?.running ?? 0) > 0 ? "indigo" : undefined} />
+          <StatRow label="Redis Broker Queue" value={data?.sync_jobs?.pending ?? 0} />
+          <StatRow label="Job Failures" value={data?.sync_jobs?.failed ?? 0} highlight={(data?.sync_jobs?.failed ?? 0) > 0 ? "red" : undefined} />
         </SectionCard>
       </div>
 
@@ -256,19 +256,19 @@ function AdminDashboard() {
       ========================================== */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <SectionCard title="Neo4j Knowledge Graph Telemetry" icon={<Sparkles size={16} className="text-violet-600" />}>
-          <StatRow label="Total Graph Nodes" value={data.knowledge_graph.total_nodes} />
-          <StatRow label="Indexed Projects" value={data.knowledge_graph.projects} />
-          <StatRow label="Technologies & Frameworks" value={data.knowledge_graph.technologies} />
-          <StatRow label="Database Entities" value={data.knowledge_graph.databases} />
-          <StatRow label="Linked Documents" value={data.knowledge_graph.documents} />
-          <StatRow label="Total Semantic Relationships" value={data.knowledge_graph.total_relationships} highlight="indigo" />
+          <StatRow label="Total Graph Nodes" value={data?.knowledge_graph?.total_nodes ?? 0} />
+          <StatRow label="Indexed Projects" value={data?.knowledge_graph?.projects ?? 0} />
+          <StatRow label="Technologies & Frameworks" value={data?.knowledge_graph?.technologies ?? 0} />
+          <StatRow label="Database Entities" value={data?.knowledge_graph?.databases ?? 0} />
+          <StatRow label="Linked Documents" value={data?.knowledge_graph?.documents ?? 0} />
+          <StatRow label="Total Semantic Relationships" value={data?.knowledge_graph?.total_relationships ?? 0} highlight="indigo" />
         </SectionCard>
 
         <SectionCard title="AI Intelligence & Token Usage" icon={<MessageSquare size={16} className="text-amber-600" />}>
-          <StatRow label="Total Prompt Queries" value={data.ai_usage.queries} />
-          <StatRow label="Neural Responses Generated" value={data.ai_usage.responses} />
-          <StatRow label="Files Discovered in Scope" value={data.sync_jobs.files_found} />
-          <StatRow label="Files Processed via Vectorizer" value={data.sync_jobs.files_processed} highlight="emerald" />
+          <StatRow label="Total Prompt Queries" value={data?.ai_usage?.queries ?? 0} />
+          <StatRow label="Neural Responses Generated" value={data?.ai_usage?.responses ?? 0} />
+          <StatRow label="Files Discovered in Scope" value={data?.sync_jobs?.files_found ?? 0} />
+          <StatRow label="Files Processed via Vectorizer" value={data?.sync_jobs?.files_processed ?? 0} highlight="emerald" />
         </SectionCard>
       </div>
 
@@ -286,11 +286,11 @@ function AdminDashboard() {
             </p>
           </div>
           <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-600">
-            {data.recent_activity.length} Entries
+            {(data?.recent_activity ?? []).length} Entries
           </span>
         </div>
 
-        {data.recent_activity.length === 0 ? (
+        {(data?.recent_activity ?? []).length === 0 ? (
           <div className="py-10 text-center">
             <Database size={24} className="mx-auto text-slate-300" />
             <p className="mt-2 text-xs text-slate-400">
@@ -309,7 +309,7 @@ function AdminDashboard() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {data.recent_activity.map((activity) => (
+                {(data?.recent_activity ?? []).map((activity) => (
                   <tr key={activity.id} className="transition hover:bg-slate-50/80">
                     <td className="py-3 font-semibold text-slate-900">
                       {activity.source_name}
@@ -351,11 +351,11 @@ function AdminDashboard() {
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <HealthBadge
             label="PostgreSQL Relational DB"
-            status={data.system_health.database}
+            status={data?.system_health?.database || "Healthy"}
           />
           <HealthBadge
             label="Celery Asynchronous Ingestion"
-            status={data.system_health.ingestion}
+            status={data?.system_health?.ingestion || "Healthy"}
           />
         </div>
       </div>
