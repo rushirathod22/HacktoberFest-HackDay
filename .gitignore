@@ -41,3 +41,7 @@ dist/
 # Coverage
 .coverage
 htmlcov/
+
+# Raw Cloned Repositories
+**/datasets/raw_datasets/
+backend/datasets/raw_datasets/
