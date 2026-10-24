@@ -57,8 +57,15 @@ class AuthService:
         if existing_user is not None:
             return None
 
+        from app.models.organization import Organization
+        org = db.query(Organization).first()
+        if not org:
+            org = Organization(name="Default Organization", domain="default.local")
+            db.add(org)
+            db.flush()
+
         user = User(
-            organization_id=1,
+            organization_id=org.id,
             name=name.strip(),
             email=email.lower().strip(),
             password_hash=hash_password(password),
