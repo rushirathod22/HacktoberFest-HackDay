@@ -17,14 +17,22 @@ app = FastAPI(
     version=settings.APP_VERSION,
 )
 
-origins = [item.strip() for item in settings.CORS_ORIGINS.split(",") if item.strip()]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=[
+        "http://localhost:5174",
+        "http://127.0.0.1:5174",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Register your existing routers below this line
+# Example:
+# app.include_router(auth_router, prefix="/api/v1/auth")
+
 
 app.add_exception_handler(Exception, global_exception_handler)
 app.include_router(api_router)
