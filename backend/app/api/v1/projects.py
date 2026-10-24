@@ -168,6 +168,7 @@ def get_my_projects(
         db=db,
         user_id=current_user.id,
         organization_id=current_user.organization_id,
+        role=current_user.role,
     )
 
 

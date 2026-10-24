@@ -246,7 +246,13 @@ class ProjectService:
         db: Session,
         user_id: int,
         organization_id: int,
+        role: str = "employee",
     ):
+        if role == "admin":
+            return ProjectRepository.get_all_by_org(
+                db,
+                organization_id,
+            )
 
         return ProjectMemberRepository.get_projects_for_user(
             db,
