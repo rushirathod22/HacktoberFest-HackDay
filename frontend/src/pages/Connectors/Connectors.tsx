@@ -397,47 +397,38 @@ function Connectors() {
     return (
 
         <div className="space-y-6">
-
-            <div className="flex items-center justify-between">
-
-                <div>
-
-                    <h2 className="text-3xl font-bold text-slate-900">
-                        Data Sources
-                    </h2>
-
-                    <p className="mt-1 text-sm text-slate-500">
-                        Manage organization and project knowledge sources.
-                    </p>
-
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-center gap-2.5">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-600 text-white shadow-sm shadow-indigo-500/20">
+                        <Plus size={22} />
+                    </div>
+                    <div>
+                        <h2 className="text-xl font-bold tracking-tight text-slate-900">
+                            Enterprise Data Sources
+                        </h2>
+                        <p className="text-xs text-slate-500">
+                            Configure automated connectors for Git repositories, local directories, and documentation.
+                        </p>
+                    </div>
                 </div>
 
-
-                <div className="flex items-center gap-3">
-
+                <div className="flex items-center gap-2.5">
                     <button
                         onClick={loadData}
-                        className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                        className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 shadow-2xs hover:bg-slate-50 transition active:scale-95"
                     >
-                        <RefreshCw size={16} />
+                        <RefreshCw size={14} />
                         Refresh
                     </button>
 
-
                     <button
-                        onClick={() =>
-                            setShowForm(
-                                !showForm
-                            )
-                        }
-                        className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+                        onClick={() => setShowForm(!showForm)}
+                        className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 px-4 py-2 text-xs font-semibold text-white shadow-xs hover:brightness-105 transition active:scale-95"
                     >
-                        <Plus size={16} />
-                        Add Data Source
+                        <Plus size={14} />
+                        {showForm ? "Close Form" : "Add Data Source"}
                     </button>
-
                 </div>
-
             </div>
 
 
@@ -625,18 +616,15 @@ function Connectors() {
                         <button
                             type="submit"
                             disabled={saving}
-                            className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+                            className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 px-4 py-2 text-xs font-semibold text-white shadow-xs hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-60 transition"
                         >
-
                             {saving && (
                                 <Loader2
-                                    size={16}
+                                    size={14}
                                     className="animate-spin"
                                 />
                             )}
-
                             Create Data Source
-
                         </button>
 
                     </div>
