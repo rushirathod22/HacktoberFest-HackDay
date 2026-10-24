@@ -38,6 +38,7 @@ class CodeGraphService:
                     f.project_id=$project_id,
                     f.repository_id=$repository_id,
                     f.path=$path,
+                    f.name=$path,
                     f.language=$language
                 WITH f
                 MATCH (r:CodeRepository {id:$repository_id})

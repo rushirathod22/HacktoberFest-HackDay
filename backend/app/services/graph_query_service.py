@@ -676,75 +676,33 @@ class GraphQueryService:
           )
 
         OPTIONAL MATCH (p)-[r]-(n)
+        WHERE n.organization_id = $organization_id
 
-        WHERE
-            n.organization_id =
-                $organization_id
-
-            AND (
-                n:Organization
-
-                OR (
-                    n:Document
-                    AND (
-                        n.project_id IS NULL
-                        OR n.project_id IN $project_ids
-                    )
-                )
-
-                OR (
-                    n:Project
-                    AND any(
-                        pid IN coalesce(
-                            n.project_ids,
-                            []
-                        )
-                        WHERE pid IN $project_ids
-                    )
-                )
-
-                OR (
-                    NOT n:Organization
-                    AND NOT n:Document
-                    AND NOT n:Project
-                    AND (
-                        coalesce(
-                            n.project_ids,
-                            []
-                        ) = []
-
-                        OR any(
-                            pid IN coalesce(
-                                n.project_ids,
-                                []
-                            )
-                            WHERE pid IN $project_ids
-                        )
-                    )
-                )
-            )
+        OPTIONAL MATCH (n:CodeRepository)-[r_file:CONTAINS]->(f:CodeFile)
+        WHERE f.organization_id = $organization_id
 
         RETURN
+            elementId(p) AS project_id,
             p.name AS project_name,
             labels(p) AS project_type,
-            elementId(p) AS project_id,
             type(r) AS relationship,
-            coalesce(n.name, n.title) AS target_name,
+            elementId(n) AS target_id,
+            coalesce(n.name, n.path) AS target_name,
             labels(n) AS target_type,
-            elementId(n) AS target_id
-
+            type(r_file) AS file_relationship,
+            elementId(f) AS file_id,
+            coalesce(f.name, f.path) AS file_name,
+            labels(f) AS file_type
         ORDER BY relationship, target_name
         """
 
         with driver.session() as session:
-
             result = session.run(
                 query,
                 organization_id=organization_id,
                 project_name=project_name,
                 project_ids=project_ids,
             )
-
             records = result.data()
 
         if not records:
@@ -757,16 +715,9 @@ class GraphQueryService:
         edges = set()
 
         first = records[0]
-
         project_id = first.get("project_id")
-        project_name_value = first.get(
-            "project_name"
-        )
-
-        project_type = (
-            first.get("project_type")
-            or ["Project"]
-        )
+        project_name_value = first.get("project_name")
+        project_type = first.get("project_type") or ["Project"]
 
         if project_id:
             nodes[str(project_id)] = {
@@ -776,48 +727,35 @@ class GraphQueryService:
             }
 
         for record in records:
+            target_id = record.get("target_id")
+            target_name = record.get("target_name")
+            target_type = record.get("target_type") or []
+            relationship = record.get("relationship")
 
-            target_id = record.get(
-                "target_id"
-            )
+            if target_id and target_name:
+                tid_str = str(target_id)
+                nodes[tid_str] = {
+                    "id": tid_str,
+                    "label": target_name,
+                    "type": target_type[0] if target_type else "Entity",
+                }
+                if relationship and project_id:
+                    edges.add((str(project_id), tid_str, relationship))
 
-            target_name = record.get(
-                "target_name"
-            )
+                # Also attach code file children if present
+                file_id = record.get("file_id")
+                file_name = record.get("file_name")
+                file_type = record.get("file_type") or ["CodeFile"]
+                file_rel = record.get("file_relationship") or "CONTAINS"
 
-            target_type = (
-                record.get("target_type")
-                or []
-            )
-
-            relationship = record.get(
-                "relationship"
-            )
-
-            if not target_id or not target_name:
-                continue
-
-            target_id = str(target_id)
-
-            nodes[target_id] = {
-                "id": target_id,
-                "label": target_name,
-                "type": (
-                    target_type[0]
-                    if target_type
-                    else "Entity"
-                ),
-            }
-
-            if relationship and project_id:
-
-                edge_key = (
-                    str(project_id),
-                    target_id,
-                    relationship,
-                )
-
-                edges.add(edge_key)
+                if file_id and file_name:
+                    fid_str = str(file_id)
+                    nodes[fid_str] = {
+                        "id": fid_str,
+                        "label": file_name,
+                        "type": file_type[0] if file_type else "CodeFile",
+                    }
+                    edges.add((tid_str, fid_str, file_rel))
 
         return {
             "nodes": list(nodes.values()),
