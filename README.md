@@ -12,9 +12,11 @@
 [![Redis](https://img.shields.io/badge/Redis-7-DC382D.svg?style=for-the-badge&logo=redis&logoColor=white)](https://redis.io)
 [![Celery](https://img.shields.io/badge/Celery-5.4.0-37814A.svg?style=for-the-badge&logo=celery&logoColor=white)](https://docs.celeryq.dev)
 [![Google Gemini](https://img.shields.io/badge/Google%20Gemini-1.5%20Pro-8E75C2.svg?style=for-the-badge&logo=google&logoColor=white)](https://ai.google.dev)
+[![Project Presentation](https://img.shields.io/badge/Project%20Presentation-Google%20Slides-EA4335.svg?style=for-the-badge&logo=googleslides&logoColor=white)](https://docs.google.com/presentation/d/1Yt1jjyMTniTYk-NyfKfL4FZYdZumJs-i/edit?usp=sharing&ouid=105436163698430899164&rtpof=true&sd=true)
 
 **Enterprise Organizational Memory + CodeMind** is a next-generation corporate intelligence platform designed to eliminate institutional knowledge loss and accelerate engineering understanding. Combining multi-tenant **GraphRAG** (Knowledge Graphs + Vector Search) with an AST-driven **CodeMind Studio**, it bridges the gap between high-level business documents and low-level code implementation.
 
+[📽 Project Presentation (PPT)](https://docs.google.com/presentation/d/1Yt1jjyMTniTYk-NyfKfL4FZYdZumJs-i/edit?usp=sharing&ouid=105436163698430899164&rtpof=true&sd=true) •
 [System Architecture](#-system-architecture) •
 [Data & Execution Flows](#-data--execution-flows) •
 [Quickstart Guide](#-quickstart-guide) •
@@ -24,6 +26,13 @@
 ---
 
 </div>
+
+## 📽 Project Presentation (Pitch Deck)
+
+> 📊 **Explore the official project slide deck covering problem statement, system architecture, core innovations, and live demonstration:**  
+> 👉 **[Open Google Slides Presentation](https://docs.google.com/presentation/d/1Yt1jjyMTniTYk-NyfKfL4FZYdZumJs-i/edit?usp=sharing&ouid=105436163698430899164&rtpof=true&sd=true)**
+
+---
 
 ## 🌟 Key Features
 
